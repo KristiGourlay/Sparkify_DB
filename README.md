@@ -1,2 +1,2 @@
-# postgres_data_modeling
+# Sparkify DB 
 Udacity Data Engineering Project One (Data Modeling with Postgres)

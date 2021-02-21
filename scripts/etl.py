@@ -3,12 +3,13 @@ import glob
 import psycopg2
 import pandas as pd
 from sql_queries import *
+import configparser
 
 
 def process_song_file(cur, filepath):
-    
+
     '''For each json file from the dataset, extracts information about the song and the artist and loads them into the songs and artists tables'''
-    
+
     #open song file
     df = pd.read_json(filepath, lines=True)
 
@@ -16,16 +17,16 @@ def process_song_file(cur, filepath):
     # insert song record
     song_data = df[['song_id', 'title', 'artist_id', 'year', 'duration']].values.tolist()[0]
     cur.execute(song_table_insert, song_data)
-    
+
     # insert artist record
     artist_data = df[['artist_id', 'artist_name', 'artist_location', 'artist_latitude', 'artist_longitude']].values.tolist()[0]
     cur.execute(artist_table_insert, artist_data)
 
 
 def process_log_file(cur, filepath):
-    
+
     '''For each json file from the dataset, extracts information on the time, user, and songplay activity and loads the information into the time, users, and songplays tables'''
-    
+
     # open log file
     df = pd.read_json(filepath, lines=True)
 
@@ -34,7 +35,7 @@ def process_log_file(cur, filepath):
 
     # convert timestamp column to datetime
     df.ts = pd.to_datetime(df.ts)
-    
+
     # insert time data records
     time_data = ([list(df.ts.dt.time), list(df.ts.dt.hour),
             list(df.ts.dt.day), list(df.ts.dt.week),
@@ -42,7 +43,7 @@ def process_log_file(cur, filepath):
             list(df.ts.dt.weekday)])
     column_labels = ('start_time', 'hour', 'day', 'week', 'month', 'year', 'weekday')
     time_df = pd.DataFrame(dict(zip(column_labels, time_data)))
- 
+
 
     for i, row in time_df.iterrows():
         cur.execute(time_table_insert, list(row))
@@ -57,11 +58,11 @@ def process_log_file(cur, filepath):
 
     # insert songplay records
     for index, row in df.iterrows():
-        
+
         # get songid and artistid from song and artist tables
         cur.execute(song_select, (row.song, row.artist, row.length))
         results = cur.fetchone()
-        
+
         if results:
             songid, artistid = results
         else:
@@ -74,9 +75,9 @@ def process_log_file(cur, filepath):
 
 
 def process_data(cur, conn, filepath, func):
-    
+
     '''Finds all the json files in the directory and processes them through the two above functions'''
-    
+
     # get all files matching extension from directory
     all_files = []
     for root, dirs, files in os.walk(filepath):
@@ -96,7 +97,12 @@ def process_data(cur, conn, filepath, func):
 
 
 def main():
-    conn = psycopg2.connect("host=127.0.0.1 dbname=sparkifydb user=student password=student")
+
+    config = configparser.ConfigParser()
+    config.read('dwh.cfg')
+
+    conn = psycopg2.connect("host={} dbname={} user={} password={}".format(*config['CREDENTIALS'].values()))
+
     cur = conn.cursor()
 
     process_data(cur, conn, filepath='data/song_data', func=process_song_file)

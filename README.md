@@ -1,3 +1,5 @@
+# Sparkify Database: Project One (Modeling with Postgres)
+
 * Objective:
 
 Sparkify is a music streaming app. The goal of this project was to build a relational database schema and an ETL pipeline using two sets of data: song data and log data. Song data is metadata that the streaming app has for artists and songs, while log data is the event log of the user activity from the app.
